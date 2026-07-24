@@ -1,0 +1,21 @@
+# Project structure
+CryptoPulse-DevOps-Lab/
+├── app/                  # Исходный код приложения на Python
+│   ├── main.py           # Flask/FastAPI приложение
+│   ├── requirements.txt  # Зависимости Python
+│   └── templates/        # HTML-шаблоны
+├── terraform/            # Инфраструктура как код (IaC)
+│   ├── main.tf           # VPC, Subnets, Security Groups
+│   ├── ec2.tf            # Инстансы для Web и App
+│   ├── rds.tf            # База данных PostgreSQL
+│   ├── alb.tf            # Балансировщик нагрузки
+│   └── outputs.tf        # Вывод IP-адресов и DNS
+├── ansible/              # Управление конфигурацией
+│   ├── inventory.ini     # Динамический или статический список хостов
+│   ├── playbook.yml      # Главный playbook
+│   └── roles/            # Роли для Nginx, App, Python
+└── .github/
+    └── workflows/        # CI/CD пайплайны (GitHub Actions)
+
+Запуск приложения
+gunicorn -w 4 -b 127.0.0.1:8000 --access-logfile logs/access.log --error-logfile logs/error.log app.wsgi:cryptapp

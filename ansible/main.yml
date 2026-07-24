@@ -1,0 +1,39 @@
+- name: Install Python and pip
+  apt:
+    name:
+      - python3-pip
+      - python3-venv
+      - git
+    state: present
+    update_cache: yes
+
+- name: Create app directory
+  file:
+    path: /var/www/crypto_app
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+
+- name: Clone or update application code
+  git:
+    repo: 'https://github.com/your-username/my-devops-project.git'
+    dest: /var/www/crypto_app
+    version: main
+
+- name: Install Python dependencies inside venv
+  pip:
+    requirements: /var/www/crypto_app/app/requirements.txt
+    virtualenv: /var/www/crypto_app/venv
+    virtualenv_command: python3 -m venv
+
+- name: Configure systemd service for Flask
+  template:
+    src: crypto_app.service.j2
+    dest: /etc/systemd/system/crypto_app.service
+  notify: Restart crypto_app
+
+- name: Start and enable crypto_app service
+  systemd:
+    name: crypto_app
+    enabled: yes
+    state: started
