@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cryptocurrency Exchange Rates</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 50px;
+            display: flex;
+            justify-content: center;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        h2 { margin-top: 0; color: #333; }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        select, input[type="text"], button {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        input[type="text"] {
+            margin-top: 8px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 4px;
+            font-size: 18px;
+            text-align: center;
+            font-weight: bold;
+            color: #333;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>Check the crypto exchange rate</h2>
+
+        <div class="form-group">
+            <label for="cryptoSelect">Select crypto:</label>
+            <select id="cryptoSelect" onchange="handleSelectChange()">
+                <option value="bitcoin">Bitcoin (BTC)</option>
+                <option value="ethereum">Ethereum (ETH)</option>
+                <option value="solana">Solana (SOL)</option>
+                <option value="custom">Other (enter manually)...</option>
+            </select>
+        </div>
+
+        <div class="form-group" id="customGroup" style="display: none;">
+            <label for="customInput">Enter ID coin (TRX for example):</label>
+            <input type="text" id="customInput" placeholder="examp. cardano">
+        </div>
+
+        <button onclick="getPrice()">Get Rate</button>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function handleSelectChange() {
+            const select = document.getElementById('cryptoSelect');
+            const customGroup = document.getElementById('customGroup');
+            if (select.value === 'custom') {
+                customGroup.style.display = 'block';
+                document.getElementById('customInput').focus();
+            } else {
+                customGroup.style.display = 'none';
+            }
+        }
+
+        async function getPrice() {
+            const select = document.getElementById('cryptoSelect');
+            let coin = select.value;
+
+            if (coin === 'custom') {
+                coin = document.getElementById('customInput').value.trim().toLowerCase();
+                if (!coin) {
+                    alert('Please enter crypto symbol');
+                    return;
+                }
+            }
+
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerText = 'Loading...';
+
+            try {
+                const response = await window.fetch(`/api/price?symbol=${encodeURIComponent(coin)}`);
+
+                if (!response.ok) {
+                    throw new Error('Server Error or coin not found');
+                }
+
+                const data = await response.json();
+
+                // Waiting JSON: { "symbol": "BTC", "price_usd": 65000 }
+                resultDiv.innerText = `Rate ${data.symbol.toUpperCase()}: $${data.price_usd}`;
+            } catch (error) {
+                resultDiv.innerText = 'Error: unable to retrieve the data.';
+                console.error(error);
+            }
+        }
+    </script>
+
+</body>
+</html>

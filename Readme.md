@@ -1,4 +1,5 @@
 # Project structure
+```
 CryptoPulse-DevOps-Lab/
 ├── app/                  # Исходный код приложения на Python
 │   ├── main.py           # Flask/FastAPI приложение
@@ -16,6 +17,18 @@ CryptoPulse-DevOps-Lab/
 │   └── roles/            # Роли для Nginx, App, Python
 └── .github/
     └── workflows/        # CI/CD пайплайны (GitHub Actions)
-
+```
 Запуск приложения
 gunicorn -w 4 -b 127.0.0.1:8000 --access-logfile logs/access.log --error-logfile logs/error.log app.wsgi:cryptapp
+
+Порядок применения на терраформ
+1. global vars - local state
+2. S3 - local state
+3. Move global vars to remote state
+4. Move S3 to remote state
+5. Network
+6. ec2_web_asg
+7. ec2_app_asg
+8. mz_rds
+9. route53
+10. bastion

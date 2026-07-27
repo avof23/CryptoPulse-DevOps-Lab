@@ -7,12 +7,11 @@ import requests
 from flask import Flask, render_template, jsonify, request
 from sqlalchemy.orm import sessionmaker
 
-from app.db import Mapping_tb, engine
+from app.db import MappingTB, engine
 
 cryptapp = Flask(__name__)
 
 HOME_PROJECT = Path(__file__).resolve().parent.parent
-#basedir = os.path.abspath(os.path.dirname(__file__))
 logdir = os.path.join(HOME_PROJECT, 'logs')
 log_file_path = os.path.join(logdir, 'cryptapp.log')
 
@@ -42,7 +41,7 @@ def get_name_by_symbol(symbol: str) -> str | None:
     """Get crypto name from database by (symbol)"""
     session = SessionLocal()
     try:
-        crypto = session.query(Mapping_tb).filter_by(symbol=symbol.lower()).first()
+        crypto = session.query(MappingTB).filter_by(symbol=symbol.lower()).first()
         return crypto.name if crypto else None
     finally:
         session.close()
@@ -52,7 +51,7 @@ def get_all_cryptos() -> dict:
     """Return all crypto from database in dict {symbol: name}"""
     session = SessionLocal()
     try:
-        cryptos = session.query(Mapping_tb).all()
+        cryptos = session.query(MappingTB).all()
         return {item.symbol: item.name for item in cryptos}
     finally:
         session.close()

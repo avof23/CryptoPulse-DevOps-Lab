@@ -216,3 +216,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+#User defined
+logs/
+.aws/
+.terraform/
+*.tfvars
+*.tfvars.json
+credential.env
+!.terraform.lock.hcl

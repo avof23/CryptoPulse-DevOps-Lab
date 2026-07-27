@@ -32,7 +32,7 @@ class BaseModel(Base):
         return f"{self.__class__.__name__} id:{self.id}"
 
 
-class Mapping_tb(BaseModel):
+class MappingTB(BaseModel):
     """The class describes the database table catalogs of available crypto"""
 
     __tablename__ = "cryptomap"
