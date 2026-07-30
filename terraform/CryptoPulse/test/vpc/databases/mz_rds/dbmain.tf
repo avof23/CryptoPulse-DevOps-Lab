@@ -72,7 +72,7 @@ data "aws_ssm_parameter" "current_rds_dbname" {
 
 #-----Modules--------------------------------------------------------
 module "rds-access" {
-    source = "git@github.com:avof23/CryptoPulse-DevOps-Lab.git//modules/aws_secgroup"
+    source = "git@github.com:avof23/CryptoPulse-DevOps-Lab.git//terraform/modules/aws_secgroup"
     env = local.env
     vpc_sg_id = local.vpc_id
     inbond_rule = {

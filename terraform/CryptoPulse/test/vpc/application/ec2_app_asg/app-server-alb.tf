@@ -79,7 +79,7 @@ locals {
 
 #-----Modules--------------------------------------------------------
 module "alb-app-access" {
-    source = "git@github.com:avof23/CryptoPulse-DevOps-Lab.git//modules/aws_secgroup"
+    source = "git@github.com:avof23/CryptoPulse-DevOps-Lab.git//terraform/modules/aws_secgroup"
     env = local.env
     vpc_sg_id = local.vpc_id
     inbond_rule = {
@@ -91,7 +91,7 @@ module "alb-app-access" {
 }
 
 module "app-access" {
-    source = "git@github.com:avof23/CryptoPulse-DevOps-Lab.git//modules/aws_secgroup"
+    source = "git@github.com:avof23/CryptoPulse-DevOps-Lab.git//terraform/modules/aws_secgroup"
     env = local.env
     vpc_sg_id = local.vpc_id
     inbond_rule = {
