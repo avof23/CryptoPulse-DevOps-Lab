@@ -16,6 +16,15 @@ data "aws_ssm_parameter" "current_project_name" {
 locals {
   region = data.aws_region.current.id
   project_name = data.aws_ssm_parameter.current_project_name.value
+  ssm_prefix   = "/${local.project_name}"
+}
+
+data "aws_ssm_parameter" "common_tags" {
+  name = "${local.ssm_prefix}/globalvars/common_tags"
+}
+
+locals {
+  common_tags = jsondecode(data.aws_ssm_parameter.common_tags.value)
 }
 
 #-----Remote State--------------------------------------------------
@@ -32,7 +41,7 @@ resource "aws_s3_bucket" "terraform_states" {
   force_destroy       = false
   object_lock_enabled = false
   region              = local.region
-  tags                = {}
+  tags                = local.common_tags
   tags_all            = {}
 }
 
