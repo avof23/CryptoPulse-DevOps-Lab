@@ -66,11 +66,16 @@ data "aws_ssm_parameter" "ssh_key_name" {
   name  = "${local.ssm_prefix}/${local.env}/vpc/application/vpn/bastion/ssh_ansible_key"
 }
 
+data "aws_ssm_parameter" "sg_bastion_id" {
+  name  = "${local.ssm_prefix}/${local.env}/vpc/application/vpn/bastion/sg_bastion_id"
+}
+
 locals {
   	vpc_id = data.aws_ssm_parameter.vpc_id.value
   	private_subnet_ids = jsondecode(data.aws_ssm_parameter.private_subnet_ids.value)
 	public_subnet_ids = jsondecode(data.aws_ssm_parameter.public_subnet_ids.value)
 	ssh_access_key = data.aws_ssm_parameter.ssh_key_name.value
+	sg_bastion_id = data.aws_ssm_parameter.sg_bastion_id.value
 }
 
 #-----Modules--------------------------------------------------------
@@ -98,6 +103,19 @@ module "web-access" {
 		protocol = "tcp"
 		cidr_block = null
 		source_sg = module.alb-web-access.sg_id
+    }
+}
+
+module "ssh-web-access" {
+    source = "git@github.com:avof23/CryptoPulse-DevOps-Lab.git//terraform/modules/aws_secgroup"
+    env = local.env
+    vpc_sg_id = local.vpc_id
+	resource_name = "ssh-web"
+    inbond_rule = {
+		port = ["22"]
+		protocol = "tcp"
+		cidr_block = null
+		source_sg = local.sg_bastion_id
     }
 }
 
