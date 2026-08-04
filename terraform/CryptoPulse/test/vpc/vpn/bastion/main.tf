@@ -96,6 +96,7 @@ resource "aws_instance" "bastion_server" {
     ami = data.aws_ami.working_ami.id
     vpc_security_group_ids = [module.sg-bastion.sg_id]
     subnet_id =  local.public_subnet_ids[count.index]
+    associate_public_ip_address = true
     tags = merge(local.common_tags, {
 	Name = "bastion_${count.index + 1}"
 	OS = "Debian"
