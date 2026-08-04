@@ -63,11 +63,11 @@ data "aws_ssm_parameter" "public_subnet_ids" {
 }
 
 data "aws_ssm_parameter" "ssh_key_name" {
-  name  = "${local.ssm_prefix}/${local.env}/vpc/application/vpn/bastion/ssh_ansible_key"
+  name  = "${local.ssm_prefix}/${local.env}/vpc/vpn/bastion/ssh_ansible_key"
 }
 
 data "aws_ssm_parameter" "sg_bastion_id" {
-  name  = "${local.ssm_prefix}/${local.env}/vpc/application/vpn/bastion/sg_bastion_id"
+  name  = "${local.ssm_prefix}/${local.env}/vpc/vpn/bastion/sg_bastion_id"
 }
 
 locals {

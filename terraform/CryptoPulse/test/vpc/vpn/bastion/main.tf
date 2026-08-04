@@ -10,7 +10,7 @@ provider "aws" {}
 #-----Remote State--------------------------------------------------
 terraform {
     backend "s3" {
-	key = "CryptoPulse/test/vpc/application/vpn/bastion/terraform.tfstate"
+	key = "CryptoPulse/test/vpc/vpn/bastion/terraform.tfstate"
     }
 }
 
@@ -78,14 +78,14 @@ module "sg-bastion" {
 
 #-----SSM PS Resource------------------------------------------------
 resource "aws_ssm_parameter" "sg_bastion_id" {
-  name  = "${local.ssm_prefix}/${local.env}/vpc/application/vpn/bastion/sg_bastion_id"
+  name  = "${local.ssm_prefix}/${local.env}/vpc/vpn/bastion/sg_bastion_id"
   type  = "String"
   value = module.sg-bastion.sg_id
   depends_on = [module.sg-bastion]
 }
 
 resource "aws_ssm_parameter" "ssh_key_name" {
-  name  = "${local.ssm_prefix}/${local.env}/vpc/application/vpn/bastion/ssh_ansible_key"
+  name  = "${local.ssm_prefix}/${local.env}/vpc/vpn/bastion/ssh_ansible_key"
   type  = "String"
   value = var.ssh_key_name
 }
