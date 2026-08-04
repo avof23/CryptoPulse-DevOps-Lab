@@ -89,7 +89,7 @@ module "alb-app-access" {
     vpc_sg_id = local.vpc_id
 	resource_name = "alb-app"
     inbond_rule = {
-		port = var.endpoint_port
+		port = [var.endpoint_port]
 		protocol = "tcp"
 		cidr_block = null
 		source_sg = data.aws_ssm_parameter.web-instances-sg_id.value
