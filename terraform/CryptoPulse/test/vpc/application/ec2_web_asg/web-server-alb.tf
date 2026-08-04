@@ -79,7 +79,7 @@ module "alb-web-access" {
 	env         = local.env
 	vpc_sg_id   = local.vpc_id
 	inbond_rule = {
-		port       = lookup(var.allow_ports, local.env, "443")
+		port       = lookup(var.allow_ports, local.env, ["443"])
 		protocol   = "tcp"
 		cidr_block = "0.0.0.0/0"
 		source_sg  = null
@@ -92,7 +92,7 @@ module "web-access" {
     vpc_sg_id = local.vpc_id
     inbond_rule = {
 
-		port = lookup(var.allow_ports, local.env, "443")
+		port = lookup(var.allow_ports, local.env, ["443"])
 		protocol = "tcp"
 		cidr_block = null
 		source_sg = module.alb-web-access.sg_id
