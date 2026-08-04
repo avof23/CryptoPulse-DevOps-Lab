@@ -82,6 +82,7 @@ module "alb-app-access" {
     source = "git@github.com:avof23/CryptoPulse-DevOps-Lab.git//terraform/modules/aws_secgroup"
     env = local.env
     vpc_sg_id = local.vpc_id
+	resource_name = "alb-app"
     inbond_rule = {
 		port = var.endpoint_port
 		protocol = "tcp"
@@ -94,6 +95,7 @@ module "app-access" {
     source = "git@github.com:avof23/CryptoPulse-DevOps-Lab.git//terraform/modules/aws_secgroup"
     env = local.env
     vpc_sg_id = local.vpc_id
+	resource_name = "app"
     inbond_rule = {
 		port = lookup(var.allow_ports, local.env, ["8000"])
 		protocol = "tcp"

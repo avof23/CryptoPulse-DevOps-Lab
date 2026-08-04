@@ -67,6 +67,7 @@ module "sg-bastion" {
   source = "git@github.com:avof23/CryptoPulse-DevOps-Lab.git//terraform/modules/aws_secgroup"
   env = local.env
   vpc_sg_id = local.vpc_id
+  resource_name = "bastion"
   inbond_rule = {
   port = var.allow_ports
   protocol = "tcp"

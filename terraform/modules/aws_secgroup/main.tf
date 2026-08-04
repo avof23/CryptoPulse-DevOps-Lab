@@ -6,10 +6,10 @@
 #--------------------------------------------------------------------
 
 resource "aws_security_group" "vpc_sg" {
-  name ="${var.env}-vpc-${var.vpc_sg_id}-sg"
+  name ="${var.resource_name}-${var.env}-${var.vpc_sg_id}-sg"
   vpc_id      = var.vpc_sg_id
   tags = {
-    Name = "${var.env}-security group"
+    Name = "${var.resource_name}-${var.env}-security group"
   }
 }
 

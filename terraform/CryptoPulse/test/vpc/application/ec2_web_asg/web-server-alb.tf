@@ -78,6 +78,7 @@ module "alb-web-access" {
 	source      = "git@github.com:avof23/CryptoPulse-DevOps-Lab.git//terraform/modules/aws_secgroup"
 	env         = local.env
 	vpc_sg_id   = local.vpc_id
+	resource_name = "alb-web"
 	inbond_rule = {
 		port       = lookup(var.allow_ports, local.env, ["443"])
 		protocol   = "tcp"
@@ -90,6 +91,7 @@ module "web-access" {
     source = "git@github.com:avof23/CryptoPulse-DevOps-Lab.git//terraform/modules/aws_secgroup"
     env = local.env
     vpc_sg_id = local.vpc_id
+	resource_name = "web"
     inbond_rule = {
 
 		port = lookup(var.allow_ports, local.env, ["443"])

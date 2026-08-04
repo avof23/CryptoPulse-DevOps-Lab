@@ -8,6 +8,11 @@ variable "vpc_sg_id" {
   default = ""
 }
 
+variable "resource_name" {
+  type = string
+  default = ""
+}
+
 variable "inbond_rule" {
   type = object({
     port       = list(string)
