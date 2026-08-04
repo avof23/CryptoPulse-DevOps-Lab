@@ -124,7 +124,7 @@ resource "aws_launch_template" "web-ltemplate" {
 	name = "web-ltemplate"
 	instance_type = lookup(var.image_type, local.env, "t3.micro")
 	image_id = data.aws_ami.working_ami.id
-	vpc_security_group_ids = [module.web-access.sg_id]
+	vpc_security_group_ids = [module.web-access.sg_id, module.ssh-web-access.sg_id]
 	key_name = local.ssh_access_key
 	user_data = base64encode(file(var.init_script))
 
