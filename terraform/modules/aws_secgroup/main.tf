@@ -14,7 +14,7 @@ resource "aws_security_group" "vpc_sg" {
 }
 
 resource "aws_vpc_security_group_ingress_rule" "irule" {
-  for_each = toset(lookup(var.inbond_rule, "port", []))
+  for_each = toset(nonsensitive(lookup(var.inbond_rule, "port", [])))
   	security_group_id = aws_security_group.vpc_sg.id
 
   	cidr_ipv4         = lookup(var.inbond_rule, "cidr_block", null)
@@ -25,7 +25,7 @@ resource "aws_vpc_security_group_ingress_rule" "irule" {
 }
 
 resource "aws_vpc_security_group_egress_rule" "erule" {
-  for_each = toset(lookup(var.outbond_rule, "port"))
+  for_each = toset(nonsensitive(lookup(var.outbond_rule, "port")))
   	security_group_id = aws_security_group.vpc_sg.id
 
   	cidr_ipv4   = lookup(var.outbond_rule, "cidr_block")
