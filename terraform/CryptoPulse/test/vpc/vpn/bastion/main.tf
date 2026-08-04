@@ -53,13 +53,13 @@ data "aws_ssm_parameter" "vpc_id" {
   name  = "${local.ssm_prefix}/${local.env}/network/vpc_id"
 }
 
-data "aws_ssm_parameter" "private_subnet_ids" {
-  name  = "${local.ssm_prefix}/${local.env}/network/private_subnet_ids"
+data "aws_ssm_parameter" "public_subnet_ids" {
+  name  = "${local.ssm_prefix}/${local.env}/network/public_subnet_ids"
 }
 
 locals {
   vpc_id = data.aws_ssm_parameter.vpc_id.value
-  private_subnet_ids = jsondecode(data.aws_ssm_parameter.private_subnet_ids.value)
+  public_subnet_ids = jsondecode(data.aws_ssm_parameter.public_subnet_ids.value)
 }
 
 #-----Modules--------------------------------------------------------
@@ -95,7 +95,7 @@ resource "aws_instance" "bastion_server" {
     instance_type = var.image_type
     ami = data.aws_ami.working_ami.id
     vpc_security_group_ids = [module.sg-bastion.sg_id]
-    subnet_id =  local.private_subnet_ids[count.index]
+    subnet_id =  local.public_subnet_ids[count.index]
     tags = merge(local.common_tags, {
 	Name = "bastion_${count.index + 1}"
 	OS = "Debian"

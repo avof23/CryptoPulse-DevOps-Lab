@@ -95,7 +95,7 @@ module "app-access" {
     env = local.env
     vpc_sg_id = local.vpc_id
     inbond_rule = {
-		port = lookup(var.allow_ports, local.env, 8000)
+		port = lookup(var.allow_ports, local.env, "8000")
 		protocol = "tcp"
 		cidr_block = null
 		source_sg = module.alb-app-access.sg_id
