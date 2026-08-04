@@ -79,7 +79,7 @@ module "alb-web-access" {
 	env         = local.env
 	vpc_sg_id   = local.vpc_id
 	inbond_rule = {
-		port       = element(var.allow_ports, local.env)
+		port       = lookup(var.allow_ports, local.env, 443)
 		protocol   = "tcp"
 		cidr_block = "0.0.0.0/0"
 		source_sg  = null
@@ -92,7 +92,7 @@ module "web-access" {
     vpc_sg_id = local.vpc_id
     inbond_rule = {
 
-		port = element(var.allow_ports, local.env)
+		port = lookup(var.allow_ports, local.env, 443)
 		protocol = "tcp"
 		cidr_block = null
 		source_sg = module.alb-web-access.sg_id
@@ -102,7 +102,7 @@ module "web-access" {
 #-----Create resources-----------------------------------------------
 resource "aws_launch_template" "web-ltemplate" {
 	name = "web-ltemplate"
-	instance_type = element(var.image_type, local.env)
+	instance_type = lookup(var.image_type, local.env, "t3.micro")
 	image_id = data.aws_ami.working_ami.id
 	vpc_security_group_ids = [module.web-access.sg_id]
 	key_name = local.ssh_access_key
