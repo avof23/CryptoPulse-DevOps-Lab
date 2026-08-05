@@ -54,6 +54,10 @@ data "aws_ssm_parameter" "vpc_id" {
   name  = "${local.ssm_prefix}/${local.env}/network/vpc_id"
 }
 
+data "aws_ssm_parameter" "zone_id" {
+  name  = "${local.ssm_prefix}/${local.env}/route53/zone_id"
+}
+
 data "aws_ssm_parameter" "private_subnet_ids" {
   name  = "${local.ssm_prefix}/${local.env}/network/private_subnet_ids"
 }
@@ -80,6 +84,7 @@ locals {
 	public_subnet_ids = jsondecode(data.aws_ssm_parameter.public_subnet_ids.value)
 	ssh_access_key = data.aws_ssm_parameter.ssh_key_name.value
 	sg_bastion_id = data.aws_ssm_parameter.sg_bastion_id.value
+	zone_id = data.aws_ssm_parameter.zone_id.value
 }
 
 #-----Modules--------------------------------------------------------
@@ -197,6 +202,18 @@ resource "aws_lb_listener" "alb-list" {
 		type = "forward"
 		target_group_arn = aws_lb_target_group.app-tg.arn
 	}
+}
+
+resource "aws_route53_record" "app_alb_alias" {
+  zone_id = local.zone_id
+  name    = lower("api.${local.project_name}.internal")
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.app-alb.dns_name
+    zone_id                = aws_lb.app-alb.zone_id
+    evaluate_target_health = true
+  }
 }
 
 #-----SSM PS Resource------------------------------------------------

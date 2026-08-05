@@ -28,8 +28,8 @@ gunicorn -w 4 -b 127.0.0.1:8000 --access-logfile logs/access.log --error-logfile
 3. Move global vars to remote state `terraform init -migrate-state -backend-config=$TF_BACKEND_CONFIG`
 4. Move S3 to remote state `terraform init -migrate-state -backend-config=$TF_BACKEND_CONFIG`
 5. Network 
-6. bastion
-7. ec2_web_asg
-8. ec2_app_asg
-9. mz_rds
-10. route53
+6. route53
+7. bastion
+8. mz_rds
+9. ec2_app_asg
+10. ec2_web_asg

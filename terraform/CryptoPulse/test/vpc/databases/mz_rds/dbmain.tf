@@ -42,6 +42,10 @@ data "aws_ssm_parameter" "vpc_id" {
   name  = "${local.ssm_prefix}/${local.env}/network/vpc_id"
 }
 
+data "aws_ssm_parameter" "zone_id" {
+  name  = "${local.ssm_prefix}/${local.env}/route53/zone_id"
+}
+
 data "aws_ssm_parameter" "db_subnet_ids" {
   name  = "${local.ssm_prefix}/${local.env}/network/db_subnet_ids"
 }
@@ -53,6 +57,7 @@ data "aws_ssm_parameter" "app-instances-sg_id" {
 locals {
   	vpc_id = data.aws_ssm_parameter.vpc_id.value
   	db_subnet_ids = jsondecode(data.aws_ssm_parameter.db_subnet_ids.value)
+    zone_id = data.aws_ssm_parameter.zone_id.value
 }
 
 data "aws_ssm_parameter" "current_rds_password" {
@@ -136,4 +141,13 @@ resource "aws_db_instance" "postgresql" {
 
   skip_final_snapshot    = true
   depends_on = []
+}
+
+resource "aws_route53_record" "db_cname" {
+  zone_id = local.zone_id
+  name    = lower("db.${local.project_name}.internal")
+  type    = "CNAME"
+  ttl     = 300
+
+  records = [aws_db_instance.postgresql.address]
 }
