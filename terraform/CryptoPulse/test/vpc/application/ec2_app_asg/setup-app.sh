@@ -24,8 +24,6 @@ git remote add origin "${GIT_REPO_URL}"
 
 cat <<EOF >> .git/info/sparse-checkout
 requirements.txt
-alembic.ini
-alembic/
 app/
 EOF
 
@@ -61,38 +59,6 @@ chmod 600 ${APP_DIR}/.env
 mkdir -p ${APP_DIR}/logs
 useradd -r -s /bin/false appuser || true
 chown -R appuser:appuser ${APP_DIR}
-
-# Alembic migration
-cat <<'EOF' > ${APP_DIR}/run_migrations.sh
-#!/bin/bash
-source ${APP_DIR}/venv/bin/activate
-cd ${APP_DIR}
-
-echo "Ожидание готовности базы данных..."
-# Пробуем накатить миграции с повторными попытками (до 30 раз с паузой 10 сек)
-MAX_RETRIES=30
-COUNT=0
-
-until alembic upgrade head || [ $COUNT -eq $MAX_RETRIES ]; do
-    echo "База данных недоступна или миграция завершилась ошибкой. Повтор через 10 секунд... ($COUNT/$MAX_RETRIES)"
-    sleep 10
-    ((COUNT++))
-done
-
-if [ $COUNT -eq $MAX_RETRIES ]; then
-    echo "Не удалось применить миграции Alembic. База данных недоступна."
-    exit 1
-fi
-
-echo "Миграции базы данных успешно применены!"
-echo "Запуск seed_migration.py для заполнения базы начальными данными..."
-python seed_migration.py
-echo "Стартовые данные успешно залиты!"
-EOF
-
-chmod +x ${APP_DIR}/run_migrations.sh
-chown appuser:appuser ${APP_DIR}/run_migrations.sh
-nohup su -s /bin/bash appuser -c "${APP_DIR}/run_migrations.sh" > ${APP_DIR}/logs/migration.log 2>&1 &
 
 # Systemd Service for Gunicorn
 cat <<EOF > /etc/systemd/system/cryptopulse.service
