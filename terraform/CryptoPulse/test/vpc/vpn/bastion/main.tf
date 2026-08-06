@@ -78,7 +78,7 @@ module "sg-bastion" {
 
 #-----SSM PS Resource------------------------------------------------
 resource "aws_ssm_parameter" "sg_bastion_id" {
-  name  = "${local.ssm_prefix}/${local.env}/vpc/vpn/bastion/sg_bastion_id"
+  name  = "${local.ssm_prefix}/${local.env}/vpc/vpn/bastion/instance-sg_id"
   type  = "String"
   value = module.sg-bastion.sg_id
   depends_on = [module.sg-bastion]

@@ -23,6 +23,7 @@ data "aws_ssm_parameter" "current_project_name" {
 }
 
 locals {
+  region = data.aws_region.current.region
   project_name = data.aws_ssm_parameter.current_project_name.value
   ssm_prefix   = "/${local.project_name}"
 }
@@ -52,12 +53,12 @@ data "aws_ssm_parameter" "db_subnet_ids" {
   name  = "${local.ssm_prefix}/${local.env}/network/db_subnet_ids"
 }
 
-data "aws_ssm_parameter" "app-instances-sg_id" {
-  name = "${local.ssm_prefix}/${local.env}/vpc/application/ec2_app_asg/app-instances-sg_id"
-}
+#data "aws_ssm_parameter" "app-instances-sg_id" {
+#  name = "${local.ssm_prefix}/${local.env}/vpc/application/ec2_app_asg/instances-sg_id"
+#}
 
 data "aws_ssm_parameter" "bastion-instances-sg_id" {
-  name  = "${local.ssm_prefix}/${local.env}/vpc/vpn/bastion/sg_bastion_id"
+  name  = "${local.ssm_prefix}/${local.env}/vpc/vpn/bastion/instance-sg_id"
 }
 
 data "aws_ssm_parameter" "bastion_id" {
@@ -98,9 +99,7 @@ module "rds-access" {
 	  port = [var.database_port]
 	  protocol = "tcp"
 	  cidr_block = null
-      source_sg = [data.aws_ssm_parameter.app-instances-sg_id.value,
-      data.aws_ssm_parameter.bastion-instances-sg_id.value
-      ]
+      source_sg = [data.aws_ssm_parameter.bastion-instances-sg_id.value]
     }
 }
 
@@ -145,6 +144,12 @@ resource "aws_ssm_parameter" "db_name" {
   name  = "${local.ssm_prefix}/${local.env}/vpc/databases/mz_rds/rds_dbname"
   type  = "String"
   value = var.db_name
+}
+
+resource "aws_ssm_parameter" "rds-instances-sg_id" {
+  name  = "${local.ssm_prefix}/${local.env}/vpc/databases/mz_rds/instance-sg_id"
+  type  = "String"
+  value = module.rds-access.sg_id
 }
 
 #-----Create resource------------------------------------------------
@@ -232,7 +237,7 @@ resource "null_resource" "db_migration" {
 
           "echo \"Получение секретов из Secrets Manager...\"",
           "SECRET_ARN=\"${aws_ssm_parameter.rds_secret_arn.value}\"",
-          "SECRET_JSON=\\$(aws secretsmanager get-secret-value --secret-id \\$SECRET_ARN --query \"SecretString\" --output text --region ${data.aws_region.current.id})",
+          "SECRET_JSON=\\$(aws secretsmanager get-secret-value --secret-id \\$SECRET_ARN --query \"SecretString\" --output text --region ${local.region})",
 
           "echo \"Извлечение данных из JSON...\"",
           "DB_USER=\\$(echo \\$SECRET_JSON | jq -r .username)",
@@ -252,7 +257,7 @@ resource "null_resource" "db_migration" {
           "python seed_migration.py",
           "rm .env"
         ]}' \
-        --region ${data.aws_region.current.id}
+        --region ${local.region}
     EOT
   }
 }

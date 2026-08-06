@@ -66,16 +66,16 @@ data "aws_ssm_parameter" "public_subnet_ids" {
   name  = "${local.ssm_prefix}/${local.env}/network/public_subnet_ids"
 }
 
-data "aws_ssm_parameter" "web-instances-sg_id" {
-  name  = "${local.ssm_prefix}/${local.env}/vpc/application/ec2_web_asg/web-instances-sg_id"
-}
-
 data "aws_ssm_parameter" "ssh_key_name" {
   name  = "${local.ssm_prefix}/${local.env}/vpc/vpn/bastion/ssh_ansible_key"
 }
 
 data "aws_ssm_parameter" "sg_bastion_id" {
-  name  = "${local.ssm_prefix}/${local.env}/vpc/vpn/bastion/sg_bastion_id"
+  name  = "${local.ssm_prefix}/${local.env}/vpc/vpn/bastion/instance-sg_id"
+}
+
+data "aws_ssm_parameter" "sg_rds_id" {
+  name  = "${local.ssm_prefix}/${local.env}/vpc/databases/mz_rds/instance-sg_id"
 }
 
 locals {
@@ -84,7 +84,7 @@ locals {
 	public_subnet_ids = jsondecode(data.aws_ssm_parameter.public_subnet_ids.value)
 	ssh_access_key = data.aws_ssm_parameter.ssh_key_name.value
 	sg_bastion_id = data.aws_ssm_parameter.sg_bastion_id.value
-	sg_web_id = data.aws_ssm_parameter.web-instances-sg_id.value
+	sg_rds_id = data.aws_ssm_parameter.sg_rds_id.value
 	zone_id = data.aws_ssm_parameter.zone_id.value
 }
 
@@ -95,10 +95,10 @@ module "alb-app-access" {
     vpc_sg_id = local.vpc_id
 	resource_name = "alb-app"
     inbond_rule = {
-		port = [var.endpoint_port]
+		port = []
 		protocol = "tcp"
 		cidr_block = null
-		source_sg = [local.sg_web_id]
+		source_sg = []
     }
 }
 
@@ -126,6 +126,14 @@ module "ssh-app-access" {
 		cidr_block = null
 		source_sg = [local.sg_bastion_id]
     }
+}
+
+resource "aws_vpc_security_group_ingress_rule" "app_to_db" {
+  security_group_id            = local.sg_rds_id
+  referenced_security_group_id = module.app-access.sg_id
+  ip_protocol                  = "tcp"
+  from_port                    = var.database_port
+  to_port                      = var.database_port
 }
 
 #-----Create resources-----------------------------------------------
@@ -236,7 +244,13 @@ resource "aws_route53_record" "app_alb_alias" {
 
 #-----SSM PS Resource------------------------------------------------
 resource "aws_ssm_parameter" "app-instances-sg_id" {
-  name  = "${local.ssm_prefix}/${local.env}/vpc/application/ec2_app_asg/app-instances-sg_id"
+  name  = "${local.ssm_prefix}/${local.env}/vpc/application/ec2_app_asg/instance-sg_id"
+  type  = "String"
+  value = module.app-access.sg_id
+}
+
+resource "aws_ssm_parameter" "alb-app-instances-sg_id" {
+  name  = "${local.ssm_prefix}/${local.env}/vpc/application/ec2_app_asg/alb-instance-sg_id"
   type  = "String"
   value = module.app-access.sg_id
 }

@@ -4,7 +4,7 @@ set -euxo pipefail
 APP_DIR="/opt/cryptopulse"
 GIT_REPO_URL="https://github.com/avof23/CryptoPulse-DevOps-Lab.git"
 
-
+DB_DNS="db.${project}.internal"
 SSM_DB_NAME_PARAM="/${project}/${env}/vpc/databases/mz_rds/rds_dbname"
 SSM_DB_USER_PARAM="/${project}/${env}/vpc/databases/mz_rds/rds_user"
 SSM_DB_SECRET_ARN_PARAM="/${project}/${env}/vpc/databases/mz_rds/secret_arn"
@@ -49,7 +49,7 @@ DB_PASS=$(echo "${SECRET_JSON}" | jq -r .password)
 
 # Generate .env
 cat <<EOF > ${APP_DIR}/.env
-DB_HOST=db.${project}.internal
+DB_HOST=${DB_DNS}
 DB_NAME=${DB_NAME}
 DB_USER=${DB_USER}
 DB_PASSWORD=${DB_PASS}

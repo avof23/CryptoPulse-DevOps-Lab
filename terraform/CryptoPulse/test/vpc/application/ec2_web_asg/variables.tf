@@ -21,6 +21,11 @@ variable "loadbalancing_port" {
   default = "443"
 }
 
+variable "loadbalancing_app_port" {
+  type = string
+  default = "80"
+}
+
 variable "loadbalancing_proto" {
   type = string
   default = "HTTP"

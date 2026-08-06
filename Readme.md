@@ -31,3 +31,4 @@ CryptoPulse-DevOps-Lab/
 8. mz_rds
 9. ec2_app_asg
 10. ec2_web_asg
+

@@ -31,6 +31,11 @@ variable "endpoint_port" {
   default = "8000"
 }
 
+variable "database_port" {
+  type = string
+  default = "5432"
+}
+
 variable "init_script" {
   type = string
   default = "setup.sh"

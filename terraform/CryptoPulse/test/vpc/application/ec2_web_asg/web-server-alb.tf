@@ -67,7 +67,11 @@ data "aws_ssm_parameter" "ssh_key_name" {
 }
 
 data "aws_ssm_parameter" "sg_bastion_id" {
-  name  = "${local.ssm_prefix}/${local.env}/vpc/vpn/bastion/sg_bastion_id"
+  name  = "${local.ssm_prefix}/${local.env}/vpc/vpn/bastion/instance-sg_id"
+}
+
+data "aws_ssm_parameter" "sg_alb-app_id" {
+  name  = "${local.ssm_prefix}/${local.env}/vpc/application/ec2_app_asg/instance-sg_id"
 }
 
 locals {
@@ -76,6 +80,7 @@ locals {
 	public_subnet_ids = jsondecode(data.aws_ssm_parameter.public_subnet_ids.value)
 	ssh_access_key = data.aws_ssm_parameter.ssh_key_name.value
 	sg_bastion_id = data.aws_ssm_parameter.sg_bastion_id.value
+	sg_alb-app_id = data.aws_ssm_parameter.sg_alb-app_id.value
 }
 
 #-----Modules--------------------------------------------------------
@@ -119,6 +124,14 @@ module "ssh-web-access" {
     }
 }
 
+resource "aws_vpc_security_group_ingress_rule" "web_to_app" {
+  security_group_id            = local.sg_alb-app_id
+  referenced_security_group_id = module.web-access.sg_id
+  ip_protocol                  = "tcp"
+  from_port                    = var.loadbalancing_app_port
+  to_port                      = var.loadbalancing_app_port
+}
+
 #-----Create resources-----------------------------------------------
 resource "aws_launch_template" "web-ltemplate" {
 	name = "web-ltemplate"
@@ -126,7 +139,15 @@ resource "aws_launch_template" "web-ltemplate" {
 	image_id = data.aws_ami.working_ami.id
 	vpc_security_group_ids = [module.web-access.sg_id, module.ssh-web-access.sg_id]
 	key_name = local.ssh_access_key
-	user_data = base64encode(file(var.init_script))
+	user_data = base64encode(<<-EOF
+		#!/bin/bash
+		export project="${local.project_name}"
+		export env="${local.env}"
+		export region="${local.region}"
+
+		${file(var.init_script)}
+		EOF
+	)
 
 	lifecycle {
 		create_before_destroy = true
@@ -195,7 +216,7 @@ resource "aws_lb_listener" "alb-list" {
 
 #-----SSM PS Resource------------------------------------------------
 resource "aws_ssm_parameter" "web-instances-sg_id" {
-  name  = "${local.ssm_prefix}/${local.env}/vpc/application/ec2_web_asg/web-instances-sg_id"
+  name  = "${local.ssm_prefix}/${local.env}/vpc/application/ec2_web_asg/instance-sg_id"
   type  = "String"
   value = module.web-access.sg_id
 }

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euxo pipefail
 
-APP_ALB_DNS="api.cryptopulse.internal"
+APP_ALB_DNS="api.${project}.internal"
 GIT_REPO_URL="https://github.com/avof23/CryptoPulse-DevOps-Lab.git"
 TARGET_DIR="frontend"
 WEB_ROOT="/var/www/html"
@@ -27,8 +27,8 @@ cat <<EOF > /etc/apache2/sites-available/000-default.conf
     ProxyPreserveHost On
     ProxyRequests Off
 
-    ProxyPass /api/ http://${APP_ALB_DNS}:8000/api/
-    ProxyPassReverse /api/ http://${APP_ALB_DNS}:8000/api/
+    ProxyPass /api/ http://${APP_ALB_DNS}/api/
+    ProxyPassReverse /api/ http://${APP_ALB_DNS}/api/
 
     ErrorLog \${APACHE_LOG_DIR}/error.log
     CustomLog \${APACHE_LOG_DIR}/access.log combined
