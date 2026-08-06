@@ -38,7 +38,7 @@ resource "aws_iam_policy" "ssm_parameters_read" {
           "ssm:GetParameter",
           "ssm:GetParameters"
         ]
-        Resource = "arn:aws:ssm:${data.aws_region.current.region}:*:parameter/*/*/vpc/databases/mz_rds/*"
+        Resource = "arn:aws:ssm:${local.region}:*:parameter/*/*/vpc/databases/mz_rds/*"
       },
       {
         Effect = "Allow"

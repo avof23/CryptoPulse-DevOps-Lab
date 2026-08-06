@@ -44,7 +44,7 @@ data "aws_ssm_parameter" "common_tags" {
 }
 
 locals {
-  region = data.aws_region.current.id
+  region = data.aws_region.current.region
   env = data.aws_ssm_parameter.env.value
   common_tags = jsondecode(data.aws_ssm_parameter.common_tags.value)
 }
