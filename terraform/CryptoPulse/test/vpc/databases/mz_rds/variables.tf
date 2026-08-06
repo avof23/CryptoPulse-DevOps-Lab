@@ -20,9 +20,9 @@ variable "db_init_size" {
 variable "db_disk_type" {
   type = map
   default = {
-    test = "standard"
+    test = "gp3"
     prod = "gp3"
-    dev = "standard"
+    dev = "gp2"
   }
 }
 
