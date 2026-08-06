@@ -95,7 +95,7 @@ module "rds-access" {
     env = local.env
     vpc_sg_id = local.vpc_id
     inbond_rule = {
-	  port = var.database_port
+	  port = [var.database_port]
 	  protocol = "tcp"
 	  cidr_block = null
       source_sg = [data.aws_ssm_parameter.app-instances-sg_id.value,
