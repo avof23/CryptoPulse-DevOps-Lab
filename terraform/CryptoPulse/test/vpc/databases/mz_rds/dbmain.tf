@@ -64,6 +64,14 @@ data "aws_ssm_parameter" "bastion_id" {
   name = "${local.ssm_prefix}/${local.env}/vpc/vpn/bastion/instance_id"
 }
 
+data "aws_ssm_parameter" "bastion_iam_role_name" {
+  name = "${local.ssm_prefix}/${local.env}/vpc/vpn/bastion/iam_role_name"
+}
+
+data "aws_ssm_parameter" "iam_policy_arns" {
+  name = "${local.ssm_prefix}/${local.env}/vpc/vpn/bastion/iam_policy_arns"
+}
+
 locals {
   	vpc_id = data.aws_ssm_parameter.vpc_id.value
   	db_subnet_ids = jsondecode(data.aws_ssm_parameter.db_subnet_ids.value)
@@ -112,6 +120,19 @@ resource "aws_ssm_parameter" "rds_secret_arn" {
   name  = "/${local.project_name}/${local.env}/vpc/databases/mz_rds/secret_arn"
   type  = "String"
   value = aws_db_instance.postgresql.master_user_secret[0].secret_arn
+}
+
+resource "aws_ssm_parameter" "iam_policy_arns" {
+  name  = "${local.ssm_prefix}/${local.env}/vpc/vpn/bastion/iam_policy_arns"
+  type  = "String"
+  value = jsonencode(
+    distinct(
+      concat(
+        jsondecode(data.aws_ssm_parameter.iam_policy_arns.value),
+        [aws_iam_policy.rds_secrets_access.arn]
+      )
+    )
+  )
 }
 
 resource "aws_ssm_parameter" "db_user" {
@@ -165,6 +186,29 @@ resource "aws_route53_record" "db_cname" {
 
   records = [aws_db_instance.postgresql.address]
   depends_on = [aws_db_instance.postgresql]
+}
+
+resource "aws_iam_policy" "rds_secrets_access" {
+  name        = "rds_secret_access"
+  description = "Allow to read RDS master user secret from Secrets Manager"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = aws_db_instance.postgresql.master_user_secret[0].secret_arn
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "bastion_secrets_access_attach" {
+  role       = data.aws_ssm_parameter.bastion_iam_role_name.value
+  policy_arn = aws_iam_policy.rds_secrets_access.arn
 }
 
 #-----Initialize the database----------------------------------------

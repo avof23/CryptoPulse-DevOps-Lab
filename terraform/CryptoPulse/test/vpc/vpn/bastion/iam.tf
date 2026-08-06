@@ -6,9 +6,6 @@
 #  IAM Instance Profile
 # Made by A. Vlashchenkov, 07.2026
 #--------------------------------------------------------------------
-data "aws_ssm_parameter" "rds_secret_arn" {
-  name = "/${local.project_name}/${local.env}/vpc/databases/mz_rds/secret_arn"
-}
 
 #-----Create resources-----------------------------------------------
 resource "aws_iam_role" "bastion_role" {
@@ -29,8 +26,8 @@ resource "aws_iam_role" "bastion_role" {
 }
 
 resource "aws_iam_policy" "ssm_parameters_read" {
-  name        = "bastion_read_db_secrets"
-  description = "Allow Bastion to read DB credentials from SSM"
+  name        = "ssm_parameters_read"
+  description = "Allow to read DB credentials from SSM"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -41,7 +38,7 @@ resource "aws_iam_policy" "ssm_parameters_read" {
           "ssm:GetParameter",
           "ssm:GetParameters"
         ]
-        Resource = "arn:aws:ssm:${data.aws_region.current.id}:*:parameter/*/*/vpc/databases/mz_rds/*"
+        Resource = "arn:aws:ssm:${data.aws_region.current.region}:*:parameter/*/*/vpc/databases/mz_rds/*"
       },
       {
         Effect = "Allow"
@@ -49,24 +46,6 @@ resource "aws_iam_policy" "ssm_parameters_read" {
           "kms:Decrypt"
         ]
         Resource = "*"
-      }
-    ]
-  })
-}
-
-resource "aws_iam_policy" "bastion_secrets_access" {
-  name        = "bastion_rds_secret_access"
-  description = "Allow Bastion to read RDS master user secret from Secrets Manager"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "secretsmanager:GetSecretValue"
-        ]
-        Resource = data.aws_ssm_parameter.rds_secret_arn.value
       }
     ]
   })
@@ -82,19 +61,20 @@ resource "aws_iam_role_policy_attachment" "ssm_params_attach" {
   policy_arn = aws_iam_policy.ssm_parameters_read.arn
 }
 
-resource "aws_iam_role_policy_attachment" "bastion_secrets_access_attach" {
-  role       = aws_iam_role.bastion_role.name
-  policy_arn = aws_iam_policy.bastion_secrets_access.arn
-}
-
 resource "aws_iam_instance_profile" "bastion_profile" {
   name = "bastion_instance_profile"
   role = aws_iam_role.bastion_role.name
 }
 
 #-----SSM PS Resource------------------------------------------------
+resource "aws_ssm_parameter" "iam_role_name" {
+  name  = "${local.ssm_prefix}/${local.env}/vpc/vpn/bastion/iam_role_name"
+  type  = "String"
+  value = aws_iam_role.bastion_role.name
+}
+
 resource "aws_ssm_parameter" "iam_policy_arns" {
   name  = "${local.ssm_prefix}/${local.env}/vpc/vpn/bastion/iam_policy_arns"
   type  = "String"
-  value = jsonencode([aws_iam_policy.ssm_parameters_read.arn, aws_iam_policy.bastion_secrets_access.arn])
+  value = jsonencode([aws_iam_policy.ssm_parameters_read.arn])
 }
