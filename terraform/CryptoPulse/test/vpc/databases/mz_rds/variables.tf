@@ -14,7 +14,7 @@ variable "database_port" {
 
 variable "db_init_size" {
   type = number
-  default = 10
+  default = 20
 }
 
 variable "db_disk_type" {

@@ -124,6 +124,7 @@ resource "aws_ssm_parameter" "rds_secret_arn" {
 resource "aws_ssm_parameter" "iam_policy_arns" {
   name  = "${local.ssm_prefix}/${local.env}/vpc/vpn/bastion/iam_policy_arns"
   type  = "String"
+  overwrite = true
   value = jsonencode(
     distinct(
       concat(
