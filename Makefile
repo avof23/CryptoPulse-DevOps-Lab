@@ -5,4 +5,4 @@ req:
 prepare:
 	pip install -r requirements.txt
 run:
-	export PYTHONPATH=$$PWD && $(PYTHON) main.py
+	gunicorn -w 4 -b 0.0.0.0:8000 --access-logfile logs/access.log --error-logfile logs/error.log app.wsgi:cryptapp

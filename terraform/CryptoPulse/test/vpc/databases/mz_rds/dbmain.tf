@@ -16,6 +16,8 @@ terraform {
 }
 
 #-----Data Sources,Local vars----------------------------------------
+data "aws_region" "current" {}
+
 data "aws_ssm_parameter" "current_project_name" {
   name = "/CryptoPulse/globalvars/project_name"
 }
@@ -51,18 +53,22 @@ data "aws_ssm_parameter" "db_subnet_ids" {
 }
 
 data "aws_ssm_parameter" "app-instances-sg_id" {
-  name = "${local.ssm_prefix}}/${local.env}/vpc/application/ec2_app_asg/app-instances-sg_id"
+  name = "${local.ssm_prefix}/${local.env}/vpc/application/ec2_app_asg/app-instances-sg_id"
+}
+
+data "aws_ssm_parameter" "bastion-instances-sg_id" {
+  name  = "${local.ssm_prefix}/${local.env}/vpc/vpn/bastion/sg_bastion_id"
+}
+
+data "aws_ssm_parameter" "bastion_id" {
+  name = "${local.ssm_prefix}/${local.env}/vpc/vpn/bastion/instance_id"
 }
 
 locals {
   	vpc_id = data.aws_ssm_parameter.vpc_id.value
   	db_subnet_ids = jsondecode(data.aws_ssm_parameter.db_subnet_ids.value)
     zone_id = data.aws_ssm_parameter.zone_id.value
-}
-
-data "aws_ssm_parameter" "current_rds_password" {
-  name = "${local.ssm_prefix}/${local.env}/vpc/databases/mz_rds/rds_password"
-  depends_on = [aws_ssm_parameter.db_password]
+    bastion_id = data.aws_ssm_parameter.bastion_id.value
 }
 
 data "aws_ssm_parameter" "current_rds_user" {
@@ -84,26 +90,33 @@ module "rds-access" {
 	  port = var.database_port
 	  protocol = "tcp"
 	  cidr_block = null
-      source_sg = data.aws_ssm_parameter.app-instances-sg_id.value
+      source_sg = [data.aws_ssm_parameter.app-instances-sg_id.value,
+      data.aws_ssm_parameter.bastion-instances-sg_id.value
+      ]
     }
 }
 
 #-----SSM Parametr Store---------------------------------------------
-resource "random_password" "db_password" {
-  length = 12
-  special = true
-  override_special = "#(){}-+$&@%^"
-}
-
-resource "aws_ssm_parameter" "db_password" {
-  name  = "${local.ssm_prefix}/${local.env}/vpc/databases/mz_rds/rds_password"
-  type  = "SecureString"
-  value = random_password.db_password.result
+#resource "random_password" "db_password" {
+#  length = 12
+#  special = true
+#  override_special = "#(){}-+$&@%^"
+#}
+#
+#resource "aws_ssm_parameter" "db_password" {
+#  name  = "${local.ssm_prefix}/${local.env}/vpc/databases/mz_rds/rds_password"
+#  type  = "SecureString"
+#  value = random_password.db_password.result
+#}
+resource "aws_ssm_parameter" "rds_secret_arn" {
+  name  = "/${local.project_name}/${local.env}/vpc/databases/mz_rds/secret_arn"
+  type  = "String"
+  value = aws_db_instance.postgresql.master_user_secret[0].secret_arn
 }
 
 resource "aws_ssm_parameter" "db_user" {
   name  = "${local.ssm_prefix}/${local.env}/vpc/databases/mz_rds/rds_user"
-  type  = "SecureString"
+  type  = "String"
   value = var.db_user
 }
 
@@ -132,7 +145,8 @@ resource "aws_db_instance" "postgresql" {
 
   db_name                = data.aws_ssm_parameter.current_rds_dbname.value
   username               = data.aws_ssm_parameter.current_rds_user.value
-  password               = data.aws_ssm_parameter.current_rds_password.value
+  manage_master_user_password = true
+  #password               = data.aws_ssm_parameter.current_rds_password.value
 
   db_subnet_group_name   = aws_db_subnet_group.rds_subnets.name
   vpc_security_group_ids = [module.rds-access.id]
@@ -150,4 +164,51 @@ resource "aws_route53_record" "db_cname" {
   ttl     = 300
 
   records = [aws_db_instance.postgresql.address]
+  depends_on = [aws_db_instance.postgresql]
+}
+
+#-----Initialize the database----------------------------------------
+resource "null_resource" "db_migration" {
+  triggers = {
+    db_endpoint = aws_db_instance.postgresql.endpoint
+  }
+  depends_on = [aws_db_instance.postgresql,
+    aws_ssm_parameter.db_name
+  ]
+
+  provisioner "local-exec" {
+    command = <<EOT
+      aws ssm send-command \
+        --document-name "AWS-RunShellScript" \
+        --targets "Key=instanceids,Values=${local.bastion_id}" \
+        --parameters '{"commands":[
+          "echo \"Ожидание завершения настройки бастиона...\"",
+          "while [ ! -f /opt/cryptopulse/.provision_done ]; do sleep 5; done",
+          "cd /opt/cryptopulse",
+
+          "echo \"Получение секретов из Secrets Manager...\"",
+          "SECRET_ARN=\"${aws_ssm_parameter.rds_secret_arn.value}\"",
+          "SECRET_JSON=\\$(aws secretsmanager get-secret-value --secret-id \\$SECRET_ARN --query \"SecretString\" --output text --region ${data.aws_region.current.id})",
+
+          "echo \"Извлечение данных из JSON...\"",
+          "DB_USER=\\$(echo \\$SECRET_JSON | jq -r .username)",
+          "DB_PASS=\\$(echo \\$SECRET_JSON | jq -r .password)",
+
+          "echo \"Генерация .env файла...\"",
+          "cat <<EOF > .env",
+          "DB_HOST=${aws_db_instance.postgresql.address}",
+          "DB_NAME=${data.aws_ssm_parameter.current_rds_dbname.value}",
+          "DB_USER=\\$DB_USER",
+          "DB_PASSWORD=\\$DB_PASS",
+          "EOF",
+
+          "source venv/bin/activate",
+          "echo \"Запуск миграций Alembic...\"",
+          "alembic upgrade head",
+          "python seed_migration.py",
+          "rm .env"
+        ]}' \
+        --region ${data.aws_region.current.id}
+    EOT
+  }
 }

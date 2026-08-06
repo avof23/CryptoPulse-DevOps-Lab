@@ -88,7 +88,7 @@ module "alb-web-access" {
 		port       = lookup(var.allow_ports, local.env, ["443"])
 		protocol   = "tcp"
 		cidr_block = "0.0.0.0/0"
-		source_sg  = null
+		source_sg  = []
 	}
 }
 
@@ -102,7 +102,7 @@ module "web-access" {
 		port = lookup(var.allow_ports, local.env, ["443"])
 		protocol = "tcp"
 		cidr_block = null
-		source_sg = module.alb-web-access.sg_id
+		source_sg = [module.alb-web-access.sg_id]
     }
 }
 
@@ -115,7 +115,7 @@ module "ssh-web-access" {
 		port = ["22"]
 		protocol = "tcp"
 		cidr_block = null
-		source_sg = local.sg_bastion_id
+		source_sg = [local.sg_bastion_id]
     }
 }
 
@@ -134,7 +134,7 @@ resource "aws_launch_template" "web-ltemplate" {
 }
 
 resource "aws_autoscaling_group" "web-asg" {
-	name = "web-asg-${aws_launch_template.web-ltemplate.latest_version}"
+	name_prefix = "web-asg-"
 	launch_template {
 		id = aws_launch_template.web-ltemplate.id
 		version = aws_launch_template.web-ltemplate.latest_version
@@ -145,6 +145,13 @@ resource "aws_autoscaling_group" "web-asg" {
 	vpc_zone_identifier = local.private_subnet_ids
 	health_check_type = "ELB"
 	target_group_arns = [aws_lb_target_group.web-tg.arn]
+
+	instance_refresh {
+		strategy = "Rolling"
+		preferences {
+			min_healthy_percentage = 50
+		}
+	}
 
 	dynamic "tag" {
 		for_each = merge(local.common_tags, {Name="Web Server in ASG-v${aws_launch_template.web-ltemplate.latest_version}"})

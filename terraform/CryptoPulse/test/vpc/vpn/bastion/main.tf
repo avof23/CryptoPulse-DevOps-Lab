@@ -72,7 +72,7 @@ module "sg-bastion" {
   port = var.allow_ports
   protocol = "tcp"
   cidr_block = "0.0.0.0/0"
-  source_sg = null
+  source_sg = []
     }
 }
 
@@ -90,6 +90,12 @@ resource "aws_ssm_parameter" "ssh_key_name" {
   value = var.ssh_key_name
 }
 
+resource "aws_ssm_parameter" "bastion_id" {
+  name  = "${local.ssm_prefix}/${local.env}/vpc/vpn/bastion/instance_id"
+  type  = "String"
+  value = aws_instance.bastion_server.id
+}
+
 #-----create resources-----------------------------------------------
 resource "aws_instance" "bastion_server" {
     count = 1
@@ -98,6 +104,7 @@ resource "aws_instance" "bastion_server" {
     vpc_security_group_ids = [module.sg-bastion.sg_id]
     subnet_id =  local.public_subnet_ids[count.index]
     associate_public_ip_address = true
+    iam_instance_profile = aws_iam_instance_profile.bastion_profile.name
     tags = merge(local.common_tags, {
 	Name = "bastion_${count.index + 1}"
 	OS = "Debian"

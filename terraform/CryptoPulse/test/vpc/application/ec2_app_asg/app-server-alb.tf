@@ -84,6 +84,7 @@ locals {
 	public_subnet_ids = jsondecode(data.aws_ssm_parameter.public_subnet_ids.value)
 	ssh_access_key = data.aws_ssm_parameter.ssh_key_name.value
 	sg_bastion_id = data.aws_ssm_parameter.sg_bastion_id.value
+	sg_web_id = data.aws_ssm_parameter.web-instances-sg_id.value
 	zone_id = data.aws_ssm_parameter.zone_id.value
 }
 
@@ -97,7 +98,7 @@ module "alb-app-access" {
 		port = [var.endpoint_port]
 		protocol = "tcp"
 		cidr_block = null
-		source_sg = data.aws_ssm_parameter.web-instances-sg_id.value
+		source_sg = [local.sg_web_id]
     }
 }
 
@@ -110,7 +111,7 @@ module "app-access" {
 		port = lookup(var.allow_ports, local.env, ["8000"])
 		protocol = "tcp"
 		cidr_block = null
-		source_sg = module.alb-app-access.sg_id
+		source_sg = [module.alb-app-access.sg_id]
     }
 }
 
@@ -123,7 +124,7 @@ module "ssh-app-access" {
 		port = ["22"]
 		protocol = "tcp"
 		cidr_block = null
-		source_sg = local.sg_bastion_id
+		source_sg = [local.sg_bastion_id]
     }
 }
 
@@ -133,8 +134,17 @@ resource "aws_launch_template" "app-ltemplate" {
 	instance_type = lookup(var.image_type, local.env, "t3.micro")
 	image_id = data.aws_ami.working_ami.id
 	vpc_security_group_ids = [module.app-access.sg_id, module.ssh-app-access.sg_id]
+	iam_instance_profile = aws_iam_instance_profile.app_profile.name
 	key_name = local.ssh_access_key
-	user_data = base64encode(file(var.init_script))
+	user_data = base64encode(<<-EOF
+		#!/bin/bash
+		export project="${local.project_name}"
+		export env="${local.env}"
+		export region="${local.region}"
+
+		${file(var.init_script)}
+		EOF
+	)
 
 	lifecycle {
 		create_before_destroy = true
@@ -142,7 +152,8 @@ resource "aws_launch_template" "app-ltemplate" {
 }
 
 resource "aws_autoscaling_group" "app-asg" {
-	name = "app-asg-${aws_launch_template.app-ltemplate.latest_version}"
+	name_prefix         = "app-asg-"
+	#name = "app-asg-${aws_launch_template.app-ltemplate.latest_version}"
 	launch_template {
 		id = aws_launch_template.app-ltemplate.id
 		version = aws_launch_template.app-ltemplate.latest_version
@@ -153,6 +164,13 @@ resource "aws_autoscaling_group" "app-asg" {
 	vpc_zone_identifier = local.private_subnet_ids
 	health_check_type = "ELB"
 	target_group_arns = [aws_lb_target_group.app-tg.arn]
+
+	instance_refresh {
+		strategy = "Rolling"
+		preferences {
+			min_healthy_percentage = 50
+		}
+	}
 
 	dynamic "tag" {
 		for_each = merge(local.common_tags, {Name="App Server in ASG-v${aws_launch_template.app-ltemplate.latest_version}"})
@@ -183,7 +201,7 @@ resource "aws_lb_target_group" "app-tg" {
 	deregistration_delay = "30"
 
 	health_check {
-        path                = "/"       #Эндпоинт, например /api/health
+        path                = "/"       #Endpoint example /api/health
         protocol            = var.loadbalancing_proto
         matcher             = "200"
         interval            = 30

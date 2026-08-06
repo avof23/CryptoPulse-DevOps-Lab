@@ -18,13 +18,13 @@ variable "inbond_rule" {
     port       = list(string)
     protocol   = string
     cidr_block = string
-    source_sg = string
+    source_sg = list(string)
   })
   default = {
     port       = ["22"]
     protocol   = "tcp"
     cidr_block = "0.0.0.0/0"
-    source_sg = null
+    source_sg = []
   }
 }
 
