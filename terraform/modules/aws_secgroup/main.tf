@@ -38,7 +38,7 @@ resource "aws_vpc_security_group_ingress_rule" "irule_cidr" {
 }
 
 resource "aws_vpc_security_group_ingress_rule" "irule_sg" {
-  for_each = length(var.inbond_rule.source_sg) > 0 ? local.sg_rules_map : {}
+  for_each = length(var.inbond_rule.source_sg) > 0 ? nonsensitive(local.sg_rules_map) : {}
 
   security_group_id            = aws_security_group.vpc_sg.id
   referenced_security_group_id = each.value.source_sg
