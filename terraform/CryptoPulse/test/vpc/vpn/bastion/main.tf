@@ -91,9 +91,10 @@ resource "aws_ssm_parameter" "ssh_key_name" {
 }
 
 resource "aws_ssm_parameter" "bastion_id" {
+  count = length(aws_instance.bastion_server)
   name  = "${local.ssm_prefix}/${local.env}/vpc/vpn/bastion/instance_id"
   type  = "String"
-  value = aws_instance.bastion_server.id
+  value = aws_instance.bastion_server[count.index].id
 }
 
 #-----create resources-----------------------------------------------
