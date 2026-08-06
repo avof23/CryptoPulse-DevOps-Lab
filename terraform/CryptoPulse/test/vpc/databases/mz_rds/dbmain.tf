@@ -158,11 +158,11 @@ resource "aws_db_instance" "postgresql" {
 
   engine                 = "postgres"
   engine_version         = "16.13"
-  instance_class         = element(var.image_type, local.env)
+  instance_class         = lookup(var.image_type, local.env)
 
   allocated_storage      = var.db_init_size
   max_allocated_storage  = var.db_init_size * 2
-  storage_type           = element(var.db_disk_type, local.env)
+  storage_type           = lookup(var.db_disk_type, local.env)
 
   db_name                = data.aws_ssm_parameter.current_rds_dbname.value
   username               = data.aws_ssm_parameter.current_rds_user.value
@@ -170,7 +170,7 @@ resource "aws_db_instance" "postgresql" {
   #password               = data.aws_ssm_parameter.current_rds_password.value
 
   db_subnet_group_name   = aws_db_subnet_group.rds_subnets.name
-  vpc_security_group_ids = [module.rds-access.id]
+  vpc_security_group_ids = [module.rds-access.sg_id]
   multi_az               = true
   publicly_accessible    = false
 
