@@ -53,6 +53,10 @@ data "aws_ssm_parameter" "vpc_id" {
   name  = "${local.ssm_prefix}/${local.env}/network/vpc_id"
 }
 
+data "aws_ssm_parameter" "zone_id" {
+  name  = "${local.ssm_prefix}/${local.env}/route53/zone_id"
+}
+
 data "aws_ssm_parameter" "public_subnet_ids" {
   name  = "${local.ssm_prefix}/${local.env}/network/public_subnet_ids"
 }
@@ -60,6 +64,7 @@ data "aws_ssm_parameter" "public_subnet_ids" {
 locals {
   vpc_id = data.aws_ssm_parameter.vpc_id.value
   public_subnet_ids = jsondecode(data.aws_ssm_parameter.public_subnet_ids.value)
+  zone_id = data.aws_ssm_parameter.zone_id.value
 }
 
 #-----Modules--------------------------------------------------------
@@ -114,4 +119,10 @@ resource "aws_instance" "bastion_server" {
 
     user_data = file(var.init_script)
     key_name = var.ssh_key_name
+}
+
+resource "aws_route53_record" "bastion_dns" {
+  zone_id = local.zone_id
+  name    = lower("bastion.${local.project_name}.internal")
+  type    = "A"
 }
