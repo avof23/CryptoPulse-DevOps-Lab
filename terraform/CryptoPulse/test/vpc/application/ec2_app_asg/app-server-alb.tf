@@ -45,7 +45,7 @@ data "aws_ssm_parameter" "common_tags" {
 }
 
 locals {
-  region = data.aws_region.current.id
+  region = data.aws_region.current.region
   env = data.aws_ssm_parameter.env.value
   common_tags = jsondecode(data.aws_ssm_parameter.common_tags.value)
 }
@@ -142,7 +142,9 @@ resource "aws_launch_template" "app-ltemplate" {
 	instance_type = lookup(var.image_type, local.env, "t3.micro")
 	image_id = data.aws_ami.working_ami.id
 	vpc_security_group_ids = [module.app-access.sg_id, module.ssh-app-access.sg_id]
-	iam_instance_profile = aws_iam_instance_profile.app_profile.name
+	iam_instance_profile {
+		name = aws_iam_instance_profile.app_profile.name
+	}
 	key_name = local.ssh_access_key
 	user_data = base64encode(<<-EOF
 		#!/bin/bash
