@@ -36,7 +36,7 @@ class MappingTB(BaseModel):
     """The class describes the database table catalogs of available crypto"""
 
     __tablename__ = "cryptomap"
-    __tableargs__ = {"comment": "Stores item of crypto symbol"}
+    __table_args__ = {"comment": "Stores item of crypto symbol"}
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     symbol = Column(String(5), nullable=False)
