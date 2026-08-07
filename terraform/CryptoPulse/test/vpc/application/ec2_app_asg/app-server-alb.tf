@@ -255,5 +255,5 @@ resource "aws_ssm_parameter" "app-instances-sg_id" {
 resource "aws_ssm_parameter" "alb-app-instances-sg_id" {
   name  = "${local.ssm_prefix}/${local.env}/vpc/application/ec2_app_asg/alb-instance-sg_id"
   type  = "String"
-  value = module.app-access.sg_id
+  value = module.alb-app-access.sg_id
 }
