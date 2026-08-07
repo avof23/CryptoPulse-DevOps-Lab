@@ -222,19 +222,20 @@ resource "null_resource" "db_migration" {
         --document-name "AWS-RunShellScript" \
         --targets "Key=instanceids,Values=${local.bastion_id}" \
         --parameters '{"commands":[
-          "echo \"Ожидание завершения настройки бастиона...\"",
-          "while [ ! -f /opt/cryptopulse/.provision_done ]; do sleep 5; done",
-          "cd /opt/cryptopulse",
+          "mkdir /opt/> /opt/${local.project_name}/logs",
+          "echo \"Ожидание завершения настройки бастиона...\" > /opt/${local.project_name}/logs/dbinit.log",
+          "while [ ! -f /opt/${local.project_name}/.provision_done ]; do sleep 5; done",
+          "cd /opt/${local.project_name}",
 
-          "echo \"Получение секретов из Secrets Manager...\"",
+          "echo \"Получение секретов из Secrets Manager...\" > /opt/${local.project_name}/logs/dbinit.log",
           "SECRET_ARN=\"${aws_ssm_parameter.rds_secret_arn.value}\"",
           "SECRET_JSON=\\$(aws secretsmanager get-secret-value --secret-id \\$SECRET_ARN --query \"SecretString\" --output text --region ${local.region})",
 
-          "echo \"Извлечение данных из JSON...\"",
+          "echo \"Извлечение данных из JSON...\" > /opt/${local.project_name}/logs/dbinit.log",
           "DB_USER=\\$(echo \\$SECRET_JSON | jq -r .username)",
           "DB_PASS=\\$(echo \\$SECRET_JSON | jq -r .password)",
 
-          "echo \"Генерация .env файла...\"",
+          "echo \"Генерация .env файла...\" > /opt/${local.project_name}/logs/dbinit.log",
           "cat <<EOF > .env",
           "DB_HOST=${aws_db_instance.postgresql.address}",
           "DB_NAME=${data.aws_ssm_parameter.current_rds_dbname.value}",
@@ -243,7 +244,7 @@ resource "null_resource" "db_migration" {
           "EOF",
 
           "source venv/bin/activate",
-          "echo \"Запуск миграций Alembic...\"",
+          "echo \"Запуск миграций Alembic...\" > /opt/${local.project_name}/logs/dbinit.log",
           "alembic upgrade head",
           "python seed_migration.py",
           "rm .env"
