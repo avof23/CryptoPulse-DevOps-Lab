@@ -28,6 +28,6 @@ CryptoPulse-DevOps-Lab/
 5. Network 
 6. route53
 7. bastion
-8. mz_rds
+8. mz_rds For reinit_database use `terraform apply -replace="null_resource.db_migration"`
 9. ec2_app_asg
 10. ec2_web_asg

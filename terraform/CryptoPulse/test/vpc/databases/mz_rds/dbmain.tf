@@ -226,7 +226,7 @@ resource "null_resource" "db_migration" {
           "#!/bin/bash",
           "set -e",
           "mkdir -p /opt/${lower(local.project_name)}/logs",
-          "echo \"Ожидание завершения настройки бастиона...\" >> /opt/${lower(local.project_name)}/logs/dbinit.log",
+          "echo \"Ожидание завершения настройки бастиона...\" > /opt/${lower(local.project_name)}/logs/dbinit.log",
           "while [ ! -f /opt/${lower(local.project_name)}/.provision_done ]; do sleep 5; done",
           "cd /opt/${lower(local.project_name)}",
 
@@ -235,8 +235,9 @@ resource "null_resource" "db_migration" {
           "SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $SECRET_ARN --query SecretString --output text --region ${local.region})",
 
           "echo \"Извлечение данных из JSON...\" >> /opt/${lower(local.project_name)}/logs/dbinit.log",
-          "DB_USER=$(echo $SECRET_JSON | python3 -c \"import sys, json; print(json.load(sys.stdin)['username'])\")",
-          "DB_PASS=$(echo $SECRET_JSON | python3 -c \"import sys, json; print(json.load(sys.stdin)['password'])\")",
+          "which jq >/dev/null 2>&1 || (apt-get update -y && apt-get install -y jq)",
+          "DB_USER=$(echo $SECRET_JSON | jq -r .username)",
+          "DB_PASS=$(echo $SECRET_JSON | jq -r .password)",
 
           "echo \"Генерация .env файла...\" >> /opt/${lower(local.project_name)}/logs/dbinit.log",
           "cat <<EOF > .env",
