@@ -172,8 +172,8 @@ resource "aws_autoscaling_group" "app-asg" {
 	max_size = 4
 	min_elb_capacity = 2
 	vpc_zone_identifier = local.private_subnet_ids
-	health_check_type = "EC2" #ELB
-	health_check_grace_period = 3600 #Удалить
+	health_check_type = "ELB" #EC2
+	#health_check_grace_period = 3600
 	target_group_arns = [aws_lb_target_group.app-tg.arn]
 
 	instance_refresh {
@@ -214,11 +214,11 @@ resource "aws_lb_target_group" "app-tg" {
 	health_check {
         path                = "/"       #Endpoint example /api/health
         protocol            = var.loadbalancing_proto
-        matcher             = "200-499" #200
-        interval            = 300 #30
-        timeout             = 60 #5
+        matcher             = "200" #200-499
+        interval            = 30
+        timeout             = 5
         healthy_threshold   = 2
-        unhealthy_threshold = 10 #2
+        unhealthy_threshold = 2
     }
 }
 
