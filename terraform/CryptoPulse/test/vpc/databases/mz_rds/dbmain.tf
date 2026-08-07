@@ -210,7 +210,8 @@ resource "null_resource" "db_migration" {
   triggers = {
     db_endpoint = aws_db_instance.postgresql.endpoint
   }
-  depends_on = [aws_db_instance.postgresql,
+  depends_on = [
+    aws_db_instance.postgresql,
     aws_ssm_parameter.db_name,
     aws_iam_policy.rds_secrets_access,
     aws_iam_role_policy_attachment.bastion_secrets_access_attach
@@ -222,32 +223,34 @@ resource "null_resource" "db_migration" {
         --document-name "AWS-RunShellScript" \
         --targets "Key=instanceids,Values=${local.bastion_id}" \
         --parameters '{"commands":[
-          "mkdir /opt/${lower(local.project_name)}/logs",
-          "echo \"Ожидание завершения настройки бастиона...\" > /opt/${lower(local.project_name)}/logs/dbinit.log",
+          "#!/bin/bash",
+          "set -e",
+          "mkdir -p /opt/${lower(local.project_name)}/logs",
+          "echo \"Ожидание завершения настройки бастиона...\" >> /opt/${lower(local.project_name)}/logs/dbinit.log",
           "while [ ! -f /opt/${lower(local.project_name)}/.provision_done ]; do sleep 5; done",
           "cd /opt/${lower(local.project_name)}",
 
-          "echo \"Получение секретов из Secrets Manager...\" > /opt/${lower(local.project_name)}/logs/dbinit.log",
+          "echo \"Получение секретов из Secrets Manager...\" >> /opt/${lower(local.project_name)}/logs/dbinit.log",
           "SECRET_ARN=\"${aws_ssm_parameter.rds_secret_arn.value}\"",
-          "SECRET_JSON=\\$(aws secretsmanager get-secret-value --secret-id \\$SECRET_ARN --query \"SecretString\" --output text --region ${local.region})",
+          "SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $SECRET_ARN --query SecretString --output text --region ${local.region})",
 
-          "echo \"Извлечение данных из JSON...\" > /opt/${lower(local.project_name)}/logs/dbinit.log",
-          "DB_USER=\\$(echo \\$SECRET_JSON | jq -r .username)",
-          "DB_PASS=\\$(echo \\$SECRET_JSON | jq -r .password)",
+          "echo \"Извлечение данных из JSON...\" >> /opt/${lower(local.project_name)}/logs/dbinit.log",
+          "DB_USER=$(echo $SECRET_JSON | jq -r .username)",
+          "DB_PASS=$(echo $SECRET_JSON | jq -r .password)",
 
-          "echo \"Генерация .env файла...\" > /opt/${lower(local.project_name)}/logs/dbinit.log",
+          "echo \"Генерация .env файла...\" >> /opt/${lower(local.project_name)}/logs/dbinit.log",
           "cat <<EOF > .env",
           "DB_HOST=${aws_db_instance.postgresql.address}",
           "DB_NAME=${data.aws_ssm_parameter.current_rds_dbname.value}",
-          "DB_USER=\\$DB_USER",
-          "DB_PASSWORD=\\$DB_PASS",
+          "DB_USER=$DB_USER",
+          "DB_PASSWORD=$DB_PASS",
           "EOF",
 
           "source venv/bin/activate",
-          "echo \"Запуск миграций Alembic...\" > /opt/${lower(local.project_name)}/logs/dbinit.log",
+          "echo \"Запуск миграций Alembic...\" >> /opt/${lower(local.project_name)}/logs/dbinit.log",
           "alembic upgrade head",
           "python seed_migration.py",
-          "rm .env"
+          "rm -f .env"
         ]}' \
         --region ${local.region}
     EOT
