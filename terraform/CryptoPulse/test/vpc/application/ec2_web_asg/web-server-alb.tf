@@ -71,7 +71,7 @@ data "aws_ssm_parameter" "sg_bastion_id" {
 }
 
 data "aws_ssm_parameter" "sg_alb-app_id" {
-  name  = "${local.ssm_prefix}/${local.env}/vpc/application/ec2_app_asg/instance-sg_id"
+  name  = "${local.ssm_prefix}/${local.env}/vpc/application/ec2_app_asg/alb-instance-sg_id"
 }
 
 locals {
