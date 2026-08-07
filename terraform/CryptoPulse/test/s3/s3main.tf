@@ -14,7 +14,7 @@ data "aws_ssm_parameter" "current_project_name" {
 }
 
 locals {
-  region = data.aws_region.current.id
+  region = data.aws_region.current.region
   project_name = data.aws_ssm_parameter.current_project_name.value
   ssm_prefix   = "/${local.project_name}"
 }

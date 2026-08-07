@@ -74,7 +74,7 @@ resource "aws_ssm_parameter" "iam_role_name" {
 }
 
 resource "aws_ssm_parameter" "iam_policy_arns" {
-  name  = "${local.ssm_prefix}/${local.env}/vpc/vpn/bastion/iam_policy_arns"
+  name  = "${local.ssm_prefix}/${local.env}/vpc/vpn/bastion/iam_policy_ssmps"
   type  = "String"
-  value = jsonencode([aws_iam_policy.ssm_parameters_read.arn])
+  value = aws_iam_policy.ssm_parameters_read.arn
 }

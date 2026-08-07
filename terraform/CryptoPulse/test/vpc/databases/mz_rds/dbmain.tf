@@ -69,10 +69,6 @@ data "aws_ssm_parameter" "bastion_iam_role_name" {
   name = "${local.ssm_prefix}/${local.env}/vpc/vpn/bastion/iam_role_name"
 }
 
-data "aws_ssm_parameter" "iam_policy_arns" {
-  name = "${local.ssm_prefix}/${local.env}/vpc/vpn/bastion/iam_policy_arns"
-}
-
 locals {
   	vpc_id = data.aws_ssm_parameter.vpc_id.value
   	db_subnet_ids = jsondecode(data.aws_ssm_parameter.db_subnet_ids.value)
@@ -99,7 +95,7 @@ module "rds-access" {
 	  port = [var.database_port]
 	  protocol = "tcp"
 	  cidr_block = null
-      source_sg = [data.aws_ssm_parameter.bastion-instances-sg_id.value]
+      source_sg = data.aws_ssm_parameter.bastion-instances-sg_id.value
     }
 }
 
@@ -121,18 +117,10 @@ resource "aws_ssm_parameter" "rds_secret_arn" {
   value = aws_db_instance.postgresql.master_user_secret[0].secret_arn
 }
 
-resource "aws_ssm_parameter" "iam_policy_arns" {
-  name  = "${local.ssm_prefix}/${local.env}/vpc/vpn/bastion/iam_policy_arns"
+resource "aws_ssm_parameter" "iam_policy_secstore" {
+  name  = "${local.ssm_prefix}/${local.env}/vpc/databases/mz_rds/iam_policy_secstore"
   type  = "String"
-  overwrite = true
-  value = jsonencode(
-    distinct(
-      concat(
-        jsondecode(data.aws_ssm_parameter.iam_policy_arns.value),
-        [aws_iam_policy.rds_secrets_access.arn]
-      )
-    )
-  )
+  value = aws_iam_policy.rds_secrets_access.arn
 }
 
 resource "aws_ssm_parameter" "db_user" {
@@ -223,7 +211,9 @@ resource "null_resource" "db_migration" {
     db_endpoint = aws_db_instance.postgresql.endpoint
   }
   depends_on = [aws_db_instance.postgresql,
-    aws_ssm_parameter.db_name
+    aws_ssm_parameter.db_name,
+    aws_iam_policy.rds_secrets_access,
+    aws_iam_role_policy_attachment.bastion_secrets_access_attach
   ]
 
   provisioner "local-exec" {

@@ -12,39 +12,15 @@ resource "aws_security_group" "vpc_sg" {
   }
 }
 
-locals {
-  sg_rules_list = flatten([
-    for port in var.inbond_rule.port : [
-      for sg in var.inbond_rule.source_sg : {
-        key       = "${port}_${sg}"
-        port      = port
-        source_sg = sg
-      }
-    ]
-  ])
-  sg_rules_map = {
-	  for rule in local.sg_rules_list : rule.key => rule
-  }
-}
+resource "aws_vpc_security_group_ingress_rule" "irule" {
+  for_each = toset(nonsensitive(lookup(var.inbond_rule, "port", [])))
+  	security_group_id = aws_security_group.vpc_sg.id
 
-resource "aws_vpc_security_group_ingress_rule" "irule_cidr" {
-  for_each = (var.inbond_rule.cidr_block != null && var.inbond_rule.cidr_block != "") ? toset(nonsensitive(var.inbond_rule.port)) : []
-
-  security_group_id            = aws_security_group.vpc_sg.id
-  cidr_ipv4                    = var.inbond_rule.cidr_block
-  ip_protocol                  = var.inbond_rule.protocol
-  from_port                    = each.value
-  to_port                      = each.value
-}
-
-resource "aws_vpc_security_group_ingress_rule" "irule_sg" {
-  for_each = length(var.inbond_rule.source_sg) > 0 ? nonsensitive(local.sg_rules_map) : {}
-
-  security_group_id            = aws_security_group.vpc_sg.id
-  referenced_security_group_id = each.value.source_sg
-  ip_protocol                  = var.inbond_rule.protocol
-  from_port                    = each.value.port
-  to_port                      = each.value.port
+  	cidr_ipv4         = lookup(var.inbond_rule, "cidr_block", null)
+	referenced_security_group_id = lookup(var.inbond_rule, "source_sg", null)
+  	ip_protocol       = lookup(var.inbond_rule, "protocol")
+	from_port         = each.value
+  	to_port           = each.value
 }
 
 resource "aws_vpc_security_group_egress_rule" "erule" {

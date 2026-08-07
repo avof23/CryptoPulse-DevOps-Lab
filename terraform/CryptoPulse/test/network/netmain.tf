@@ -23,7 +23,7 @@ data "aws_ssm_parameter" "env" {
 }
 
 locals {
-  region = data.aws_region.current.id
+  region = data.aws_region.current.region
   env = data.aws_ssm_parameter.env.value
 }
 

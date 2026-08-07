@@ -98,7 +98,7 @@ module "alb-app-access" {
 		port = []
 		protocol = "tcp"
 		cidr_block = null
-		source_sg = []
+		source_sg = null
     }
 }
 
@@ -111,7 +111,7 @@ module "app-access" {
 		port = lookup(var.allow_ports, local.env, ["8000"])
 		protocol = "tcp"
 		cidr_block = null
-		source_sg = [module.alb-app-access.sg_id]
+		source_sg = module.alb-app-access.sg_id
     }
 }
 
@@ -124,7 +124,7 @@ module "ssh-app-access" {
 		port = ["22"]
 		protocol = "tcp"
 		cidr_block = null
-		source_sg = [local.sg_bastion_id]
+		source_sg = local.sg_bastion_id
     }
 }
 

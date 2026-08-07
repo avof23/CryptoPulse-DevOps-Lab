@@ -72,7 +72,7 @@ module "sg-bastion" {
   port = var.allow_ports
   protocol = "tcp"
   cidr_block = "0.0.0.0/0"
-  source_sg = []
+  source_sg = null
     }
 }
 

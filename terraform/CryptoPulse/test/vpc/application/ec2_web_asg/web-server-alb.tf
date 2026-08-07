@@ -45,7 +45,7 @@ data "aws_ssm_parameter" "common_tags" {
 }
 
 locals {
-  region = data.aws_region.current.id
+  region = data.aws_region.current.region
   env = data.aws_ssm_parameter.env.value
   common_tags = jsondecode(data.aws_ssm_parameter.common_tags.value)
 }
@@ -93,7 +93,7 @@ module "alb-web-access" {
 		port       = lookup(var.allow_ports, local.env, ["443"])
 		protocol   = "tcp"
 		cidr_block = "0.0.0.0/0"
-		source_sg  = []
+		source_sg  = null
 	}
 }
 
@@ -107,7 +107,7 @@ module "web-access" {
 		port = lookup(var.allow_ports, local.env, ["443"])
 		protocol = "tcp"
 		cidr_block = null
-		source_sg = [module.alb-web-access.sg_id]
+		source_sg = module.alb-web-access.sg_id
     }
 }
 
@@ -120,7 +120,7 @@ module "ssh-web-access" {
 		port = ["22"]
 		protocol = "tcp"
 		cidr_block = null
-		source_sg = [local.sg_bastion_id]
+		source_sg = local.sg_bastion_id
     }
 }
 
