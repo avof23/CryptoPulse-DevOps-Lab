@@ -200,6 +200,7 @@ resource "aws_autoscaling_group" "app-asg" {
 resource "aws_lb" "app-alb" {
 	name = "APP-Servers-HA-ALB"
 	load_balancer_type = "application"
+	internal           = true
 	subnets = local.private_subnet_ids
 	security_groups = [module.alb-app-access.sg_id]
 }
