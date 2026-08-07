@@ -15,8 +15,8 @@ data "aws_ssm_parameter" "iam_policy_secstore" {
 }
 
 locals {
-  policy_arn_ssmps = jsondecode(data.aws_ssm_parameter.iam_policy_ssmps.value)
-  policy_arn_secstore = jsondecode(data.aws_ssm_parameter.iam_policy_secstore.value)
+  policy_arn_ssmps = data.aws_ssm_parameter.iam_policy_ssmps.value
+  policy_arn_secstore = data.aws_ssm_parameter.iam_policy_secstore.value
 }
 
 resource "aws_iam_role" "app_role" {
