@@ -226,6 +226,7 @@ resource "null_resource" "db_migration" {
           "#!/bin/bash",
           "set -e",
           "mkdir -p /opt/${lower(local.project_name)}/logs",
+          "chmod 757 /opt/${lower(local.project_name)}/logs",
           "echo \"Ожидание завершения настройки бастиона...\" > /opt/${lower(local.project_name)}/logs/dbinit.log",
           "while [ ! -f /opt/${lower(local.project_name)}/.provision_done ]; do sleep 5; done",
           "cd /opt/${lower(local.project_name)}",
@@ -250,7 +251,7 @@ resource "null_resource" "db_migration" {
           "source venv/bin/activate",
           "echo \"Запуск миграций Alembic...\" >> /opt/${lower(local.project_name)}/logs/dbinit.log",
           "alembic upgrade head",
-          "python app/seed_module.py",
+          "python3 -m app.seed_module",
           "rm -f .env"
         ]}' \
         --region ${local.region}
