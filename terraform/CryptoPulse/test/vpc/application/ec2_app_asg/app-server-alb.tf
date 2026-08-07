@@ -214,7 +214,7 @@ resource "aws_lb_target_group" "app-tg" {
 	health_check {
         path                = "/"       #Endpoint example /api/health
         protocol            = var.loadbalancing_proto
-        matcher             = "200-500" #200
+        matcher             = "200-499" #200
         interval            = 300 #30
         timeout             = 60 #5
         healthy_threshold   = 2
