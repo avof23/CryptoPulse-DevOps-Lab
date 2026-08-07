@@ -12,7 +12,15 @@ AWS_REGION="${region}"
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
-apt-get install -y python3 python3-venv python3-pip git awscli build-essential libpq-dev
+apt-get install -y python3 python3-venv python3-pip git awscli build-essential libpq-dev jq
+
+#SSM Agent
+mkdir -p /tmp/ssm
+cd /tmp/ssm
+wget https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/debian_amd64/amazon-ssm-agent.deb
+dpkg -i amazon-ssm-agent.deb
+systemctl enable amazon-ssm-agent
+systemctl start amazon-ssm-agent
 
 # Git
 mkdir -p /tmp/git_app
