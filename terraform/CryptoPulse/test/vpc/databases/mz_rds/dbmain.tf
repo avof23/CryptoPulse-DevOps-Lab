@@ -250,7 +250,7 @@ resource "null_resource" "db_migration" {
           "source venv/bin/activate",
           "echo \"Запуск миграций Alembic...\" >> /opt/${lower(local.project_name)}/logs/dbinit.log",
           "alembic upgrade head",
-          "python seed_migration.py",
+          "python app/seed_module.py",
           "rm -f .env"
         ]}' \
         --region ${local.region}
